@@ -1,0 +1,2 @@
+The protocol based on evernote's exchange-note format, which is used in .enex file.
+
