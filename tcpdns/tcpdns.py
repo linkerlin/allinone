@@ -106,12 +106,12 @@ def QueryDNS(server, port, querydata):
 #----------------------------------------------------
 def transfer(querydata, addr, server):
     if not querydata: return
-
     domain = bytetodomain(querydata[12:-4])
     qtype = struct.unpack('!h', querydata[-4:-2])[0]
-    print 'domain:%s, qtype:%x, thread:%d' % \
-         (domain, qtype, threading.activeCount())
-    sys.stdout.flush()
+    print 'domain:%s, qtype:%x, thread:%d' %  (domain, qtype, threading.activeCount())
+    s='domain:%s, qtype:%x, thread:%d' %  (domain, qtype, threading.activeCount())
+    log2Q(s) 
+    #sys.stdout.flush()
     choose = random.sample(xrange(len(DHOSTS)), 1)[0]
     DHOST = DHOSTS[choose]
     response = QueryDNS(DHOST, DPORT, querydata)
@@ -140,6 +140,8 @@ from Queue import Queue
 mainQ=Queue()
 def log(x,t):
     t.text='\n'.join([t.text,x])
+    if len(t.text)>500:
+        t.text=x
 def create_log(x,t):
     return lambda :log(x,t)
 class MainWindow(JFrame):                 
@@ -170,7 +172,7 @@ class MainWindow(JFrame):
         basic.add(Box.createRigidArea(Dimension(0, 15)))
         self.setTitle(u"A DNS Proxy using TCP...一个使用TCP协议的DNS代理")
         self.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
-        self.setSize(300, 150)
+        self.setSize(500, 300)
         self.setLocationRelativeTo(None)
         self.setVisible(True)
     def onQuit(self,event):
