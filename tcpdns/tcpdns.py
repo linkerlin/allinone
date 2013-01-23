@@ -21,6 +21,7 @@ from javax.swing import JFrame
 from javax.swing import JPanel
 from javax.swing import BoxLayout
 from javax.swing import Box
+from javax.swing import *
 
 import os, sys
 import socket
@@ -29,6 +30,7 @@ import threading
 import SocketServer
 import traceback
 import random
+import thread
 
 DHOSTS = ['156.154.70.1', # remote dns server address list
          '8.8.8.8',
@@ -41,6 +43,7 @@ DHOSTS = ['156.154.70.1', # remote dns server address list
          ]
 DPORT = 53                # default dns port 53
 TIMEOUT = 20              # set timeout N second
+
 
 
 #-------------------------------------------------------------
@@ -90,8 +93,8 @@ def QueryDNS(server, port, querydata):
         s.connect((server, int(port)))
         s.send(sendbuf)
         data = s.recv(2048)
-    except:
-        print traceback.print_exc(sys.stdout)
+    except Exception,ex:
+        print traceback.print_exc(sys.stdout),ex
         if s: s.close()
         return
       
@@ -133,6 +136,62 @@ class ThreadedUDPRequestHandler(SocketServer.BaseRequestHandler):
         addr = self.client_address
         transfer(data, addr, socket)
 
+from Queue import Queue
+mainQ=Queue()
+def log(x,t):
+    t.text='\n'.join([t.text,x])
+def create_log(x,t):
+    return lambda :log(x,t)
+class MainWindow(JFrame):                 
+    def __init__(self,queue):
+        self.queue=queue
+        super(MainWindow, self).__init__()
+        self.initUI()
+    def initUI(self):
+        basic = JPanel()
+        basic.setLayout(BoxLayout(basic, BoxLayout.Y_AXIS))
+        self.add(basic)
+        basic.add(Box.createVerticalGlue())
+        bottom = JPanel()
+        bottom.setAlignmentX(1.0)
+        bottom.setLayout(BoxLayout(bottom, BoxLayout.X_AXIS))
+        #okButton = JButton("OK", actionPerformed=self.onQuit)
+        self.text_area = JTextArea(editable = False,
+              wrapStyleWord = True,
+              lineWrap = True,)
+        basic.add(self.text_area)
+        self.text_area.text=str(DHOSTS)
+        closeButton = JButton(u"Close 关闭", actionPerformed=self.onQuit)
+        #bottom.add(okButton)
+        bottom.add(Box.createRigidArea(Dimension(5, 0)))
+        bottom.add(closeButton)
+        bottom.add(Box.createRigidArea(Dimension(15, 0)))
+        basic.add(bottom)
+        basic.add(Box.createRigidArea(Dimension(0, 15)))
+        self.setTitle(u"A DNS Proxy using TCP...一个使用TCP协议的DNS代理")
+        self.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
+        self.setSize(300, 150)
+        self.setLocationRelativeTo(None)
+        self.setVisible(True)
+    def onQuit(self,event):
+        System.exit(0)
+class UIThread(threading.Thread):
+    def __init__(self,mainwin,queue):
+        self.mainwin=mainwin
+        self.queue=queue
+        threading.Thread.__init__(self)
+        
+    def run(self):
+        while True:
+            job=self.queue.get()
+            job()
+mainwin=MainWindow(mainQ)
+uithread=UIThread(mainwin,mainQ)
+uithread.setDaemon(True)
+uithread.start()
+def log2Q(message):
+    mainQ.put(create_log(message,mainwin.text_area))
+print "after mainwin inited..."
 #------------------------------------------------------
 # main entry
 #------------------------------------------------------
@@ -140,7 +199,7 @@ if __name__ == "__main__":
     print '>> Please wait program init....'
     print '>> Init finished!'
     print '>> Now you can set dns server to 127.0.0.1'
-
+    log2Q("="*10)
     server = ThreadedUDPServer(('127.0.0.1', 53), ThreadedUDPRequestHandler)
     # on my ubuntu uid is 1000, change it 
     # comment out below line on windows platform
