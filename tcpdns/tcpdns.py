@@ -74,16 +74,23 @@ def bytetodomain(s):
 #--------------------------------------------------
 # tcp dns request
 #---------------------------------------------------
-def QueryDNS(server, port, querydata):
+def QueryDNS(server, port, querydata,is_tcpserver):
     # length
     Buflen = struct.pack('!h', len(querydata))
     sendbuf = Buflen + querydata
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(config.TIMEOUT) # set socket timeout
-        s.connect((server, int(port)))
-        s.send(sendbuf)
-        data = s.recv(2048)
+        print  "is_tcpserver:",is_tcpserver
+        if is_tcpserver:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(config.TIMEOUT) # set socket timeout
+            s.connect((server, int(port)))
+            s.send(sendbuf)
+            data = s.recv(2048)
+        else:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.settimeout(config.TIMEOUT) # set socket timeout            
+            s.sendto(querydata,(server, int(port)))
+            data = s.recvfrom(2048)
     except Exception,ex:
         print traceback.print_exc(sys.stdout),ex
         if s: s.close()
@@ -91,6 +98,8 @@ def QueryDNS(server, port, querydata):
       
     if s: s.close()
     return data
+
+
 
 #-----------------------------------------------------
 # send udp dns respones back to client program
@@ -101,11 +110,10 @@ def transfer(querydata, addr, server):
     qtype = struct.unpack('!h', querydata[-4:-2])[0]
     print 'domain:%s, qtype:%x, thread:%d' %  (domain, qtype, threading.activeCount())
     s='domain:%s, qtype:%x, thread:%d' %  (domain, qtype, threading.activeCount())
-    log2Q(s) 
-    #sys.stdout.flush()
-    
-    DHOST = dnslist.randomDNS()
-    response = QueryDNS(DHOST, config.DPORT, querydata)
+    log2Q(s)     
+    DHOST,is_tcpserver = dnslist.randomDNS(domain)
+    print DHOST,is_tcpserver
+    response = QueryDNS(DHOST, config.DPORT, querydata,is_tcpserver)
     if response:
         # udp dns packet no length
         server.sendto(response[2:], addr)
