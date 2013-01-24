@@ -33,18 +33,8 @@ import traceback
 import random
 import thread
 
-DHOSTS = ['156.154.70.1', # remote dns server address list
-         '8.8.8.8',
-         '8.8.4.4',
-         '156.154.71.1',
-         #'208.67.222.222',
-         #'208.67.220.220',
-         #'198.153.192.1',
-         #'198.153.194.1'
-         ]
-DPORT = 53                # default dns port 53
-TIMEOUT = 20              # set timeout N second
-
+from dnslist import dnslist
+import config
 
 
 #-------------------------------------------------------------
@@ -90,7 +80,7 @@ def QueryDNS(server, port, querydata):
     sendbuf = Buflen + querydata
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(TIMEOUT) # set socket timeout
+        s.settimeout(config.TIMEOUT) # set socket timeout
         s.connect((server, int(port)))
         s.send(sendbuf)
         data = s.recv(2048)
@@ -113,9 +103,9 @@ def transfer(querydata, addr, server):
     s='domain:%s, qtype:%x, thread:%d' %  (domain, qtype, threading.activeCount())
     log2Q(s) 
     #sys.stdout.flush()
-    choose = random.sample(xrange(len(DHOSTS)), 1)[0]
-    DHOST = DHOSTS[choose]
-    response = QueryDNS(DHOST, DPORT, querydata)
+    
+    DHOST = dnslist.randomDNS()
+    response = QueryDNS(DHOST, config.DPORT, querydata)
     if response:
         # udp dns packet no length
         server.sendto(response[2:], addr)
@@ -163,7 +153,7 @@ class MainWindow(JFrame):
               wrapStyleWord = True,
               lineWrap = True,)
         basic.add(self.text_area)
-        self.text_area.text=str(DHOSTS)
+        self.text_area.text=str(config.DHOSTS)
         closeButton = JButton(u"Close 关闭", actionPerformed=self.onQuit)
         #bottom.add(okButton)
         bottom.add(Box.createRigidArea(Dimension(5, 0)))
