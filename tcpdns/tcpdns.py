@@ -35,46 +35,14 @@ import thread
 
 from dnslist import dnslist
 import config
+from utils import *
 
 
-#-------------------------------------------------------------
-# Hexdump£¬Cool :)
-# default width 16
-#--------------------------------------------------------------
-def hexdump( src, width=16 ):
-    FILTER=''.join([(len(repr(chr(x)))==3) and chr(x) or '.' for x in range(256)])
-    result=[]
-    for i in xrange(0, len(src), width):
-        s = src[i:i+width]
-        hexa = ' '.join(["%02X"%ord(x) for x in s])
-        printable = s.translate(FILTER)
-        result.append("%04X   %s   %s\n" % (i, hexa, printable))
-    return ''.join(result)
-
-
-#---------------------------------------------------------------
-# bytetodomain
-# 03www06google02cn00 => www.google.cn
-#--------------------------------------------------------------
-def bytetodomain(s):
-    domain = ''
-    i = 0
-    length = struct.unpack('!B', s[0:1])[0]
-  
-    while length != 0 :
-        i += 1
-        domain += s[i:i+length]
-        i += length
-        length = struct.unpack('!B', s[i:i+1])[0]
-        if length != 0 :
-            domain += '.'
-  
-    return domain
 
 #--------------------------------------------------
 # tcp dns request
 #---------------------------------------------------
-def QueryDNS(server, port, querydata,is_tcpserver):
+def queryDNS(server, port, querydata,is_tcpserver):
     # length
     Buflen = struct.pack('!h', len(querydata))
     sendbuf = Buflen + querydata
@@ -111,12 +79,16 @@ def transfer(querydata, addr, server):
     print 'domain:%s, qtype:%x, thread:%d' %  (domain, qtype, threading.activeCount())
     s='domain:%s, qtype:%x, thread:%d' %  (domain, qtype, threading.activeCount())
     log2Q(s)     
+    response= get_from_cache(domain,qtype)
+    if response:
+        server.sendto(response[2:], addr)
     DHOST,is_tcpserver = dnslist.randomDNS(domain)
     print DHOST,is_tcpserver
-    response = QueryDNS(DHOST, config.DPORT, querydata,is_tcpserver)
+    response = queryDNS(DHOST, config.DPORT, querydata,is_tcpserver)
     if response:
         # udp dns packet no length
         server.sendto(response[2:], addr)
+        set_cache(domain,qtype,response) 
     return
 
 class ThreadedUDPServer(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
