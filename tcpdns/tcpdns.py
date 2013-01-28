@@ -21,7 +21,7 @@ import thread
 from dnslist import dnslist
 import config
 from utils import *
-
+from mainwindow import *
 
 
 #--------------------------------------------------
