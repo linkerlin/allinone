@@ -9,5 +9,5 @@ DHOSTS = ['156.154.70.1', # remote dns server address list
          ]
 DPORT = 53                # default dns port 53
 TIMEOUT = 20              # set timeout N second
-WHILELIST=['\.dp']
+WHILELIST=[]  # regex for filter
 WHILELISTSERVERS=['192.168.50.11']
