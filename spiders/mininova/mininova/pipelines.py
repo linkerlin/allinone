@@ -13,8 +13,8 @@ class FilterWordsPipeline(object):
     words_to_filter = ['politics', 'religion']
 
     def process_item(self, item, spider):
-        print "process item:",item
-        print "="*100
+        #print "process item:",item
+        print "="*10
         for word in self.words_to_filter:
             if word in unicode(item['description']).lower():
                 raise DropItem("Contains forbidden word: %s" % word)
