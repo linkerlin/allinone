@@ -11,6 +11,8 @@
 SPIDER_MODULES = ['mininova.spiders']
 NEWSPIDER_MODULE = 'mininova.spiders'
 DEFAULT_ITEM_CLASS = 'mininova.items.TorrentItem'
-ITEM_PIPELINES = ['mininova.pipelines.FilterWordsPipeline']
+ITEM_PIPELINES = [
+    'mininova.pipelines.FilterWordsPipeline',
+    'mininova.pipelines.JsonWriterPipeline']
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'mininova (+http://www.yourdomain.com)'
